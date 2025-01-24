@@ -1,8 +1,8 @@
 # Django #
 *.log
 *.pot
+__pycache__/
 *.pyc
-__pycache__
 db.sqlite3
 media
 
