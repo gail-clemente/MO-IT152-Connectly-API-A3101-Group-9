@@ -12,5 +12,4 @@ urlpatterns = [
             #path('users/delete/<int:id>/', views.delete_user, name='delete_user'), # Delete a user
             #path('posts/create/', views.create_post, name='create_posts'), # Create post
             #path('posts/', views.get_posts, name='get_posts'), # Get posts
-
         ]
