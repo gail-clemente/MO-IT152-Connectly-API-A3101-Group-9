@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework import status
 from .models import User, Post, Comment
 
 
@@ -9,10 +10,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        error_messages={'does_not_exist': 'Author not found.'}
-    )
+    #author = serializers.PrimaryKeyRelatedField(
+    #    queryset=User.objects.all(),
+    #    error_messages={'does_not_exist': 'Author not found.'}
+    #)
     
     comments = serializers.StringRelatedField(many=True, read_only=True)
 
@@ -24,14 +25,14 @@ class PostSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    post = serializers.PrimaryKeyRelatedField(
-        queryset=Post.objects.all(),
-        error_messages={'does_not_exist': 'Post not found.'}
-    )
-    author = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        error_messages={'does_not_exist': 'Author not found.'}
-    )
+    #post = serializers.PrimaryKeyRelatedField(
+    #    queryset=Post.objects.all(),
+    #    error_messages={'does_not_exist': 'Post not found.'}
+    #)
+    #author = serializers.PrimaryKeyRelatedField(
+    #    queryset=User.objects.all(),
+    #    error_messages={'does_not_exist': 'Author not found.'}
+    #)
 
     class Meta:
         model = Comment

@@ -5,8 +5,7 @@ from django.db import models
 class User(models.Model):
     username = models.CharField(
         max_length=50,
-        #validators=[RegexValidator(regex='^[a-zA-Z0-9]*$', message='Username must be alphanumeric', code="invalid_username")] #add validation here, username should be alphanumeric
-    unique=True)
+        unique=True)
     email = models.EmailField(unique=True) # EmailField is a built-in email validator
     password = models.CharField( max_length=50, blank=False,
         validators=[RegexValidator(regex='^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$', message="Password should contain the following: lowercase and uppercase letter, number and should be more than 8 characters long. ",
