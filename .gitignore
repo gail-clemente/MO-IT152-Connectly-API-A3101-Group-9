@@ -2,6 +2,7 @@
 *.log
 *.pot
 __pycache__/
+__pycache__
 *.pyc
 db.sqlite3
 media
@@ -9,6 +10,13 @@ media
 # Backup files # 
 *.bak 
 
+# If you are using PyCharm # 
+# User-specific stuff
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
 
 # AWS User-specific
 .idea/**/aws.xml
@@ -25,6 +33,18 @@ media
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
 
+# Gradle
+.idea/**/gradle.xml
+.idea/**/libraries
+
+# File-based project format
+*.iws
+
+# IntelliJ
+out/
+
+# JIRA plugin
+atlassian-ide-plugin.xml
 
 # Python # 
 *.py[cod] 
@@ -54,11 +74,29 @@ wheels/
 pip-log.txt 
 pip-delete-this-directory.txt 
 
+# Unit test / coverage reports 
+htmlcov/ 
+.tox/ 
+.coverage 
+.coverage.* 
+.cache 
+.pytest_cache/ 
+nosetests.xml 
+coverage.xml 
+*.cover 
+.hypothesis/ 
 
+# Jupyter Notebook 
+.ipynb_checkpoints 
 
 # pyenv 
 .python-version 
 
+# celery 
+celerybeat-schedule.* 
+
+# SageMath parsed files 
+*.sage.py 
 
 # Environments 
 .env 
@@ -75,6 +113,22 @@ venv.bak/
 # mypy 
 .mypy_cache/ 
 
+# Sublime Text # 
+*.tmlanguage.cache 
+*.tmPreferences.cache 
+*.stTheme.cache 
+*.sublime-workspace 
+*.sublime-project 
+
+# sftp configuration file 
+sftp-config.json 
+
+# Package control specific files Package 
+Control.last-run 
+Control.ca-list 
+Control.ca-bundle 
+Control.system-ca-bundle 
+GitHub.sublime-settings 
 
 # Visual Studio Code # 
 .vscode/* 
