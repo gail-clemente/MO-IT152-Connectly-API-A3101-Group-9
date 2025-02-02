@@ -6,7 +6,14 @@ from .models import User, Post, Comment
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'created_at']
+        fields = ['id', 'username', 'email', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True}  # Prevents password from being exposed, extra_kwargs = {'password': {'write_only': True}} ensures passwords aren’t exposed in responses.
+        }
+
+    def create(self, validated_data):
+        """Override default create method to hash password"""
+        return User.objects.create_user(**validated_data)
 
 
 class PostSerializer(serializers.ModelSerializer):
