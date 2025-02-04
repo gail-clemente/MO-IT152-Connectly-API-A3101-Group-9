@@ -5,13 +5,15 @@ from .views import AdminOnlyView, PostDetailView, UserListCreate, PostListCreate
 urlpatterns = [
             #ADMIN
             path('admin/', AdminOnlyView.as_view(), name='admin-only-view'),
-            #GENERAL-USERS
+            #NOAUTH-USERS
             path('users/', UserListCreate.as_view(), name='user-list-create'), # get users and post users
-            #GENERAL-POSTS
+            #NEEDAUTH-UPDATE&DELETE USER
+            path('users/<int:pk>/', UserListCreate.as_view(), name='user-detail'),
+            #NOAUTH-POSTS
             path('posts/', PostListCreate.as_view(), name='post-list-create'), # get and post 'posts'
-            #INDIVIDUAL_POSTS
+            #NEEDAUTH_POSTS
             path('posts/<int:pk>/', PostDetailView.as_view(), name='post-detail'),
-            #GENERAL-COMMENTS
+            #NOAUTH-COMMENTS
             path('comments/', CommentListCreate.as_view(), name='comment-list-create'), # get & post comments
             #LOGIN
             path('users/login/', UserLogin.as_view(), name='user-login'),

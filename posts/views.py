@@ -75,6 +75,34 @@ class UserListCreate(APIView):
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def patch(self, request, pk):
+        # Update an existing user by ID
+        try:
+            user = User.objects.get(pk=pk)  # Get user by ID
+        except User.DoesNotExist:
+            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(user, data=request.data, partial=True)  # partial=True means we update only provided fields
+        if serializer.is_valid():
+            # Update password if provided
+            password = request.data.get("password", None)
+            if password:
+                hashed_password = make_password(password)
+                user.password = hashed_password  # Update password if it's in the request
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        # Delete a user by ID
+        try:
+            user = User.objects.get(pk=pk)
+            user.delete()
+            return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except User.DoesNotExist:
+            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        
 class UserLogin(APIView):
     """Handles user authentication"""
 
