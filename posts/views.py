@@ -17,14 +17,6 @@ from django.contrib.auth import get_user_model
 from .permissions import IsAdmin  # Assuming you have this custom permission
 
 User = get_user_model()
-# Create a new group
-#admin_group, created = Group.objects.get_or_create(name="Admin")
-
-# Assign an existing user to the group
-#user = User.objects.get(username="admin")  # Change "admin" to an actual username
-#user.groups.add(admin_group)
-
-#print(f"User {user.username} added to Admin group.")
 
 
 
@@ -95,8 +87,9 @@ class UserLogin(APIView):
 
         if user is not None:
             # If user is authenticated, check if they're an admin
-            if user.groups.filter(name="Admin").exists():  # Check if the user is in the Admin group
-                return Response({"message":"Login Successful!"" --- Welcome, Admin!"}, status=status.HTTP_200_OK)
+            if user.groups.filter(name="Admin").exists():
+                token, created = Token.objects.get_or_create(user=user)  # Check if the user is in the Admin group
+                return Response({"message":"Login Successful!"" --- Welcome, Admin!", "token": token.key}, status=status.HTTP_200_OK)
 
             # If not an admin, return a normal success message
             token, created = Token.objects.get_or_create(user=user)  # Fetch or create token
@@ -110,6 +103,7 @@ class UserLogin(APIView):
         
 
 class PostListCreate(APIView):#GENERAL, create a post, get ALL the posts
+    permission_classes = [IsAuthenticated, IsPostAuthor]
     def get(self, request):
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)

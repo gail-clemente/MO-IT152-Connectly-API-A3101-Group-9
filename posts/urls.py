@@ -4,7 +4,7 @@ from .views import AdminOnlyView, PostDetailView, UserListCreate, PostListCreate
 
 urlpatterns = [
             #ADMIN
-            path('admin/', AdminOnlyView.as_view(), name='admin'),
+            path('admin/', AdminOnlyView.as_view(), name='admin-only-view'),
             #GENERAL-USERS
             path('users/', UserListCreate.as_view(), name='user-list-create'), # get users and post users
             #GENERAL-POSTS
