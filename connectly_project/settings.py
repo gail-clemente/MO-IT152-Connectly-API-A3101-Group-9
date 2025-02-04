@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',  # Add Django REST Framework
     'posts',
     'django_extensions', # Add django extensions
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -52,12 +53,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTH_USER_MODEL = 'posts.User'  # Assuming your app is named 'posts'
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
 
 
 ROOT_URLCONF = 'connectly_project.urls'

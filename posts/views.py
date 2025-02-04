@@ -2,13 +2,39 @@ from argon2 import hash_password
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import User, Post, Comment
+from .models import Post, Comment
 from .serializers import UserSerializer, PostSerializer, CommentSerializer
 from posts import serializers
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password, check_password
 import bcrypt
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .permissions import IsAdmin, IsPostAuthor
+from django.contrib.auth.models import Group
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import get_user_model
+from .permissions import IsAdmin  # Assuming you have this custom permission
+
+User = get_user_model()
+# Create a new group
+#admin_group, created = Group.objects.get_or_create(name="Admin")
+
+# Assign an existing user to the group
+#user = User.objects.get(username="admin")  # Change "admin" to an actual username
+#user.groups.add(admin_group)
+
+#print(f"User {user.username} added to Admin group.")
+
+
+
+class ProtectedView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+
+    def get(self, request):
+        return Response({"message": "Authenticated!"})
 
 
 class UserListCreate(APIView):
@@ -64,15 +90,26 @@ class UserLogin(APIView):
         username = request.data.get("username")
         password = request.data.get("password")
 
+        # Authenticate the user
         user = authenticate(username=username, password=password)
 
         if user is not None:
-            return Response({"message": "Authentication successful!"}, status=status.HTTP_200_OK)
+            # If user is authenticated, check if they're an admin
+            if user.groups.filter(name="Admin").exists():  # Check if the user is in the Admin group
+                return Response({"message":"Login Successful!"" --- Welcome, Admin!"}, status=status.HTTP_200_OK)
+
+            # If not an admin, return a normal success message
+            token, created = Token.objects.get_or_create(user=user)  # Fetch or create token
+            return Response({
+                "message": "Login successful!",
+                #"token": token.key  
+            }, status=status.HTTP_200_OK)
+        
         else:
             return Response({"message": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
         
 
-class PostListCreate(APIView):
+class PostListCreate(APIView):#GENERAL, create a post, get ALL the posts
     def get(self, request):
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)
@@ -80,12 +117,41 @@ class PostListCreate(APIView):
 
 
     def post(self, request):
+        print(request.data)
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class PostDetailView(APIView):#INDIVIDUAL, user needs to be authenticated first
+    permission_classes = [IsAuthenticated, IsPostAuthor]
+
+    def get(self, request, pk):
+        post = Post.objects.get(pk=pk)
+        self.check_object_permissions(request, post)
+        return Response({"content": post.content})
+    
+    def patch(self, request, pk):
+        post = Post.objects.get(pk=pk)  # Get post by ID (pk)
+        self.check_object_permissions(request, post)  # Ensure user is allowed to edit this post
+        
+        # Update only the fields that are passed in the request
+        serializer = PostSerializer(post, data=request.data, partial=True)  # partial=True means not all fields need to be sent
+        if serializer.is_valid():
+            serializer.save()  # Save the updated post
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        post = Post.objects.get(pk=pk)  # Get post by ID (pk)
+        self.check_object_permissions(request, post)  # Ensure user is allowed to delete this post
+        
+        post.delete()  # Delete the post
+        return Response(status=status.HTTP_204_NO_CONTENT)  # Return 204 No Content on successful deletion
 
 class CommentListCreate(APIView):
     def get(self, request):
@@ -102,6 +168,10 @@ class CommentListCreate(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
         
+class AdminOnlyView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]  # Use the permission class to check access
 
+    def get(self, request):
+        return Response({"message": "Welcome, Admin!"})
 
 

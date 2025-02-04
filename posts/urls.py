@@ -1,11 +1,19 @@
 from django.urls import path
 from . import views
-from .views import UserListCreate, PostListCreate, CommentListCreate, UserLogin
+from .views import AdminOnlyView, PostDetailView, UserListCreate, PostListCreate, CommentListCreate, UserLogin
 
 urlpatterns = [
-            path('users/', UserListCreate.as_view(), name='user-list-create'), # updated get users and post users
-            path('posts/', PostListCreate.as_view(), name='post-list-create'), # updated get and post 'posts'
+            #ADMIN
+            path('admin/', AdminOnlyView.as_view(), name='admin'),
+            #GENERAL-USERS
+            path('users/', UserListCreate.as_view(), name='user-list-create'), # get users and post users
+            #GENERAL-POSTS
+            path('posts/', PostListCreate.as_view(), name='post-list-create'), # get and post 'posts'
+            #INDIVIDUAL_POSTS
+            path('posts/<int:pk>/', PostDetailView.as_view(), name='post-detail'),
+            #GENERAL-COMMENTS
             path('comments/', CommentListCreate.as_view(), name='comment-list-create'), # get & post comments
+            #LOGIN
             path('users/login/', UserLogin.as_view(), name='user-login'),
             #path('users/', views.get_users, name='get_users'), # Get the users
             #path('users/create/', views.create_user, name='create_user'), # Create a user

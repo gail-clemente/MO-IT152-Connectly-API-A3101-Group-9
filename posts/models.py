@@ -1,8 +1,11 @@
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 
 
-class User(models.Model):
+
+class User(AbstractUser):
+    REQUIRED_FIELDS = ('user',)
     username = models.CharField(
         max_length=50,
         unique=True)

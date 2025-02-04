@@ -1,12 +1,14 @@
 from rest_framework import serializers
 from rest_framework import status
-from .models import User, Post, Comment
+from .models import Post, Comment
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password']
+        fields = ['id', 'username', 'email']
         extra_kwargs = {
             'password': {'write_only': True}  # Prevents password from being exposed, extra_kwargs = {'password': {'write_only': True}} ensures passwords aren’t exposed in responses.
         }
@@ -17,29 +19,33 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    #author = serializers.PrimaryKeyRelatedField(
-    #    queryset=User.objects.all(),
-    #    error_messages={'does_not_exist': 'Author not found.'}
-    #)
-    
+    author = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        error_messages={'does_not_exist': 'Author not found.'}
+    )
     comments = serializers.StringRelatedField(many=True, read_only=True)
 
 
     class Meta:
         model = Post
-        fields = ['id', 'content', 'author', 'created_at', 'comments']
+        fields = [ 'content', 'author', 'created_at', 'comments']
+
+
+    def validate_author(self, value):
+        if not User.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("Author not found.")
+        return value
        
 
-
 class CommentSerializer(serializers.ModelSerializer):
-    #post = serializers.PrimaryKeyRelatedField(
-    #    queryset=Post.objects.all(),
-    #    error_messages={'does_not_exist': 'Post not found.'}
-    #)
-    #author = serializers.PrimaryKeyRelatedField(
-    #    queryset=User.objects.all(),
-    #    error_messages={'does_not_exist': 'Author not found.'}
-    #)
+    post = serializers.PrimaryKeyRelatedField(
+        queryset=Post.objects.all(),
+        error_messages={'does_not_exist': 'Post not found.'}
+    )
+    author = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        error_messages={'does_not_exist': 'Author not found.'}
+    )
 
     class Meta:
         model = Comment
