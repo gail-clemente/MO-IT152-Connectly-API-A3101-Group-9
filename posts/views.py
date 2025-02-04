@@ -95,7 +95,7 @@ class UserLogin(APIView):
             token, created = Token.objects.get_or_create(user=user)  # Fetch or create token
             return Response({
                 "message": "Login successful!",
-                #"token": token.key  
+                "token": token.key  
             }, status=status.HTTP_200_OK)
         
         else:
@@ -103,7 +103,7 @@ class UserLogin(APIView):
         
 
 class PostListCreate(APIView):#GENERAL, create a post, get ALL the posts
-    permission_classes = [IsAuthenticated, IsPostAuthor]
+    #permission_classes = [IsAuthenticated, IsPostAuthor]
     def get(self, request):
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)
