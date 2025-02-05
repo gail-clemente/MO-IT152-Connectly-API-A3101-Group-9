@@ -9,9 +9,7 @@ class User(AbstractUser):
         max_length=50,
         unique=True)
     email = models.EmailField(unique=True) # EmailField is a built-in email validator
-    password = models.CharField( max_length=50, blank=False,
-        validators=[RegexValidator(regex='^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$', message="Password should contain the following: lowercase and uppercase letter, number and should be more than 8 characters long. ",
-                                     code="invalid_password")])
+    password = models.CharField( max_length=50, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
 

@@ -64,16 +64,20 @@ class UserListCreate(APIView):
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
+        
+        # If the serializer is valid (including password validation)
         if serializer.is_valid():
-            # Hash the password before saving the user, coming from the Postman request
-            password = request.data["password"]
-            hashed_password = make_password(password)  # Hash the password
+            # Hash the password before saving
+            password = serializer.validated_data['password']
+            hashed_password = make_password(password)
+
             user = User.objects.create(
-                username=serializer.validated_data["username"],
-                email=serializer.validated_data.get("email", ""),
-                password=hashed_password  # Save the hashed password
+                username=serializer.validated_data['username'],
+                email=serializer.validated_data.get('email', ''),
+                password=hashed_password
             )
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk):

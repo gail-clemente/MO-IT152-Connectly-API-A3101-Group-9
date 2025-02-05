@@ -1,22 +1,33 @@
+from django.forms import ValidationError
 from rest_framework import serializers
 from rest_framework import status
 from .models import Post, Comment
 from django.contrib.auth import get_user_model
 from rest_framework.exceptions import PermissionDenied
+from django.core.validators import RegexValidator
 
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        write_only=True,  # Password is used only for writing
+        required=True,  # Ensure that password is required
+        validators=[RegexValidator(
+            regex='^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$',
+            message="Password should contain the following: lowercase and uppercase letter, number, and should be more than 8 characters long.",
+            code="invalid_password")]
+    )
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
-        extra_kwargs = {
-            'password': {'write_only': True}  # Prevents password from being exposed, extra_kwargs = {'password': {'write_only': True}} ensures passwords aren’t exposed in responses.
-        }
+        fields = ['id','username', 'email', 'password', 'created_at']  # Include password for creation only
 
     def create(self, validated_data):
-        """Override default create method to hash password"""
-        return User.objects.create_user(**validated_data)
+        password = validated_data.pop('password')  # Remove the password from validated data
+        user = User.objects.create(**validated_data)
+        user.set_password(password)  # Use Django's built-in password hashing
+        user.save()
+        return user
 
 
 class PostSerializer(serializers.ModelSerializer):
