@@ -1,10 +1,10 @@
 from django.urls import path
 from . import views
-from .views import AdminOnlyView, PostDetailView, UserListCreate, PostListCreate, CommentListCreate, UserLogin
+from .views import AdminOnlyView, CommentDetailView, CommentListCreateView, PostDetailView, UserListCreate, PostListCreate, UserLogin
 
 urlpatterns = [
             #ADMIN
-            path('admin/', AdminOnlyView.as_view(), name='admin-only-view'),
+            path('admin-only/', AdminOnlyView.as_view(), name='admin-only-view'),
             #NOAUTH-USERS
             path('users/', UserListCreate.as_view(), name='user-list-create'), # get users and post users
             #NEEDAUTH-UPDATE&DELETE USER
@@ -13,8 +13,10 @@ urlpatterns = [
             path('posts/', PostListCreate.as_view(), name='post-list-create'), # get and post 'posts'
             #NEEDAUTH_POSTS
             path('posts/<int:pk>/', PostDetailView.as_view(), name='post-detail'),
-            #NOAUTH-COMMENTS
-            path('comments/', CommentListCreate.as_view(), name='comment-list-create'), # get & post comments
+            #ALL-COMMENTS
+            path('<int:post_id>/comments/', CommentListCreateView.as_view(), name='comment-list-create'), # get & post all comments
+            #SPECIFIC_COMMENT
+            path('comments/<int:pk>/', CommentDetailView.as_view(), name='comment-detail'),
             #LOGIN
             path('users/login/', UserLogin.as_view(), name='user-login'),
             #path('users/', views.get_users, name='get_users'), # Get the users

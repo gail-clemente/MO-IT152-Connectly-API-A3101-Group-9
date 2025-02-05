@@ -1,4 +1,5 @@
 from argon2 import hash_password
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,7 +11,7 @@ from django.contrib.auth.hashers import make_password, check_password
 import bcrypt
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsAdmin, IsPostAuthor
+from .permissions import IsAdmin, IsCommentAuthor, IsPostAuthor
 from django.contrib.auth.models import Group
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
@@ -175,21 +176,60 @@ class PostDetailView(APIView):#INDIVIDUAL, user needs to be authenticated first
         post.delete()  # Delete the post
         return Response(status=status.HTTP_204_NO_CONTENT)  # Return 204 No Content on successful deletion
 
-class CommentListCreate(APIView):
-    def get(self, request):
-        comments = Comment.objects.all()
+class CommentListCreateView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensures only logged-in users can access
+
+    def get(self, request, post_id):
+        """Retrieve all comments for a specific post"""
+        comments = Comment.objects.filter(post_id=post_id)  # Filter by post
+        if not comments:
+            return Response({"message": "No comments found for this post."}, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = CommentSerializer(comments, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-    def post(self, request):
+    def post(self, request, post_id):
+        """Create a new comment for a post"""
+        try:
+            post = Post.objects.get(id=post_id)  # Try to get the post by ID
+        except Post.DoesNotExist:
+            return Response({"message": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(author=request.user, post=post)  # Automatically set author & post
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-        
+class CommentDetailView(APIView):#SPECIFIC COMMENT
+    permission_classes = [IsAuthenticated, IsCommentAuthor]
+
+    def get(self, request, pk):
+        """Retrieve a single comment."""
+        comment = get_object_or_404(Comment, pk=pk)
+        self.check_object_permissions(request, comment)
+        serializer = CommentSerializer(comment)
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        """Update a comment (only by author)."""
+        comment = get_object_or_404(Comment, pk=pk)
+        self.check_object_permissions(request, comment)  # Enforces permission
+
+        serializer = CommentSerializer(comment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        """Delete a comment (only by author)."""
+        comment = get_object_or_404(Comment, pk=pk)
+        self.check_object_permissions(request, comment)  # Enforces permission
+
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class AdminOnlyView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]  # Use the permission class to check access
 

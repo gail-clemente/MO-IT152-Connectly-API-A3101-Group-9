@@ -13,3 +13,9 @@ class IsPostAuthor(BasePermission):
         return obj.author == request.user
     
     
+class IsCommentAuthor(BasePermission):
+    """
+    Custom permission to allow only the author of a comment to edit or delete it.
+    """
+    def has_object_permission(self, request, view, obj):
+        return obj.author == request.user

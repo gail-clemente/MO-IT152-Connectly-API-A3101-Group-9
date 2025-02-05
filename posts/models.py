@@ -5,7 +5,6 @@ from django.db import models
 
 
 class User(AbstractUser):
-    REQUIRED_FIELDS = ('user',)
     username = models.CharField(
         max_length=50,
         unique=True)
@@ -31,12 +30,16 @@ class Post(models.Model):
 
 
 class Comment(models.Model):
-    text = models.TextField(blank=False) # The main content of the comment
-                                         # add a field level validation, blank field will not be accepted
-    author = models.ForeignKey(User, related_name='comments', on_delete=models.CASCADE) # Links the comment to its author
-    post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE) # Links the comment to a specific post
-    created_at = models.DateTimeField(auto_now_add=True) # Timestamp for when the comment is created
-
+    text = models.TextField(blank=False)  # Ensures comment text cannot be blank
+    author = models.ForeignKey(
+        User, related_name='comments', on_delete=models.CASCADE
+    )  # Links comment to the author
+    post = models.ForeignKey(
+        Post, related_name='comments', on_delete=models.CASCADE
+    )  # Links comment to a specific post
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for comment creation
+    updated_at = models.DateTimeField(auto_now=True)  # Timestamp for last update
 
     def __str__(self):
         return f"Comment by {self.author.username} on Post {self.post.id}"
+
