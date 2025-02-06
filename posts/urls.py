@@ -1,14 +1,14 @@
 from django.urls import path
 from . import views
-from .views import AdminOnlyView, CommentDetailView, CommentListCreateView, PostDetailView, UserListCreate, PostListCreate, UserLogin
+from .views import AdminOnlyView, CommentDetailView, CommentListCreateView, PostDetailView, UserDetailView, UserListCreateView, PostListCreate, UserLogin
 
 urlpatterns = [
             #ADMIN
             path('admin-only/', AdminOnlyView.as_view(), name='admin-only-view'),
-            #NOAUTH-USERS
-            path('users/', UserListCreate.as_view(), name='user-list-create'), # get users and post users
-            #NEEDAUTH-UPDATE&DELETE USER
-            path('users/<int:pk>/', UserListCreate.as_view(), name='user-detail'),
+            #ALL-USERS
+            path('users/', UserListCreateView.as_view(), name='user-list-create'), # get users and post users
+            #SPECIFICUSER-UPDATE&DELETE USER
+            path('users/<int:pk>/', UserDetailView.as_view(), name='user-detail'),
             #NOAUTH-POSTS
             path('posts/', PostListCreate.as_view(), name='post-list-create'), # get and post 'posts'
             #NEEDAUTH_POSTS

@@ -18,10 +18,18 @@ class User(AbstractUser):
 
 
 class Post(models.Model):
-    content = models.TextField(blank=False) # The main content of the post
-    author = models.ForeignKey(User, related_name='posts', on_delete=models.CASCADE) # Links the post to its author
-    created_at = models.DateTimeField(auto_now_add=True) # Timestamp for when the post is created
-
+    POST_TYPES = [
+        ('text', 'Text'),
+        ('image', 'Image'),
+        ('video', 'Video'),
+    ]
+    
+    title = models.CharField(max_length=200)  # Add a title for the post
+    content = models.TextField(blank=False)   # The main content of the post
+    author = models.ForeignKey(User, related_name='posts', on_delete=models.CASCADE)  # Link the post to its author
+    post_type = models.CharField(max_length=10, choices=POST_TYPES, default='General')  # Type of the post (e.g., text, image, video)
+    metadata = models.JSONField(default=dict, blank=True)  # Store additional metadata (e.g., file_size, duration)
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for when the post is created
 
     def __str__(self):
         return f"Post by {self.author.username} at {self.created_at}"

@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from connectly_project.singletons.logger_singleton import LoggerSingleton
 from .models import Post, Comment
 from .serializers import UserSerializer, PostSerializer, CommentSerializer
 from posts import serializers
@@ -11,14 +12,15 @@ from django.contrib.auth.hashers import make_password, check_password
 import bcrypt
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsAdmin, IsCommentAuthor, IsPostAuthor
+from .permissions import IsAdmin, IsCommentAuthor, IsPostAuthor, IsOwner
 from django.contrib.auth.models import Group
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
-from .permissions import IsAdmin  # Assuming you have this custom permission
+from .permissions import IsAdmin 
+from .factories.post_factory import PostFactory
 
 User = get_user_model()
-
+logger = LoggerSingleton().get_logger()
 
 
 class ProtectedView(APIView):
@@ -30,83 +32,77 @@ class ProtectedView(APIView):
         return Response({"message": "Authenticated!"})
 
 
-class UserListCreate(APIView):
+class UserListCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]  # Only admins can view all users, but any authenticated user can register
+
     def get(self, request):
+        """Only admin users can view all users."""
         users = User.objects.all()
         serializer = UserSerializer(users, many=True)
-        
-        # You can now access the password from the request in POST method
-        # If you were manually handling the password for verification or hash demonstration:
-        password = request.data.get("password", None)  # This comes from the Postman request
-        
-        if password:
-            # Hashing password using Django's make_password
-            hashed_password = make_password(password)
-            print("Hashed password:", hashed_password)  # Outputs a hashed version of the password
-
-            # Verifying the hashed password
-            isPasswordValid = check_password(password, hashed_password)
-            print('Is the password valid? ', isPasswordValid)  # Outputs True if the password matches
-
-        # Salting with bcrypt (optional)
-        salt = bcrypt.gensalt()
-        if password:
-            hashWithSaltPassword = bcrypt.hashpw(password.encode('utf-8'), salt)
-            print('Hash with salt password is: ', hashWithSaltPassword)
-            
-            # Verify a password
-            if bcrypt.checkpw(password.encode('utf-8'), hashWithSaltPassword):
-                print("Password is correct")
-            else:
-                print("Invalid password")
-        
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        
-        # If the serializer is valid (including password validation)
-        if serializer.is_valid():
-            # Hash the password before saving
-            password = serializer.validated_data['password']
-            hashed_password = make_password(password)
+        """Handles password hashing when creating a user."""
+        password = request.data.get("password", None)
+        if not password:
+            return Response({"error": "Password is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-            user = User.objects.create(
-                username=serializer.validated_data['username'],
-                email=serializer.validated_data.get('email', ''),
-                password=hashed_password
-            )
-            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        hashed_password = make_password(password)
 
-    def patch(self, request, pk):
-        # Update an existing user by ID
+        # Optional: Add bcrypt salting
+        salt = bcrypt.gensalt()
+        hashed_with_salt_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+
+        return Response({"message": "User created successfully", "hashed_password": hashed_password})
+
+class UserDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsOwner]  # Only the user can modify their own account
+
+    def get_object(self, pk):
         try:
-            user = User.objects.get(pk=pk)  # Get user by ID
+            return User.objects.get(pk=pk)
         except User.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        """Retrieve a specific user's details (only the owner or an admin)."""
+        user = self.get_object(pk)
+        if not user:
             return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = UserSerializer(user, data=request.data, partial=True)  # partial=True means we update only provided fields
+        # Check if the requesting user is the owner or an admin
+        if request.user != user and not request.user.is_staff:  
+            return Response({"message": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        """Allow only the owner to update their details."""
+        user = self.get_object(pk)
+        if not user:
+            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, user)  # Enforce IsOwner permission
+
+        serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
-            # Update password if provided
-            password = request.data.get("password", None)
-            if password:
-                hashed_password = make_password(password)
-                user.password = hashed_password  # Update password if it's in the request
+            if "password" in request.data:
+                user.password = make_password(request.data["password"])
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        # Delete a user by ID
-        try:
-            user = User.objects.get(pk=pk)
-            user.delete()
-            return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        except User.DoesNotExist:
+        """Allow only the owner to delete their account."""
+        user = self.get_object(pk)
+        if not user:
             return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+
+        self.check_object_permissions(request, user)  # Enforce IsOwner permission
+
+        user.delete()
+        return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)        
         
 class UserLogin(APIView):
     """Handles user authentication"""
@@ -119,6 +115,8 @@ class UserLogin(APIView):
         user = authenticate(username=username, password=password)
 
         if user is not None:
+            #Log successful
+            logger.info(f"User '{username}' logged in successfully.")
             # If user is authenticated, check if they're an admin
             if user.groups.filter(name="Admin").exists():
                 token, created = Token.objects.get_or_create(user=user)  # Check if the user is in the Admin group
@@ -132,11 +130,13 @@ class UserLogin(APIView):
             }, status=status.HTTP_200_OK)
         
         else:
+            # Log failed login attempt
+            logger.warning(f"Failed login attempt for username: {username}")
             return Response({"message": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
         
 
 class PostListCreate(APIView):#GENERAL, create a post, get ALL the posts
-    #permission_classes = [IsAuthenticated, IsPostAuthor]
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)
@@ -144,14 +144,23 @@ class PostListCreate(APIView):#GENERAL, create a post, get ALL the posts
 
 
     def post(self, request):
-        print(request.data)
-        serializer = PostSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = request.data
+
+        try:
+            post = PostFactory.create_post(
+            post_type=data['post_type'],
+            title=data['title'],
+            content=data.get('content', ''),
+            metadata=data.get('metadata', {}),
+            author=request.user  # Automatically set the author to the logged-in user
+        )
+
+            # Return the response with the created post details
+            return Response({'message': 'Post created successfully!', 'post_id': post.id}, status=status.HTTP_201_CREATED)
+
+        except ValueError as e:
+            # If the post type is invalid or missing metadata, handle the exception
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PostDetailView(APIView):#INDIVIDUAL, user needs to be authenticated first

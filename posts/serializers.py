@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.exceptions import PermissionDenied
 from django.core.validators import RegexValidator
 
+
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
@@ -40,7 +41,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = [ 'content', 'author', 'created_at', 'comments']
+        fields = ['title', 'content', 'author', 'post_type', 'metadata', 'created_at', 'comments']  # Include the new fields
 
 
     def validate_author(self, value):
