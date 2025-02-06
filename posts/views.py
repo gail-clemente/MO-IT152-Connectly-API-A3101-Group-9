@@ -163,7 +163,7 @@ class PostListCreate(APIView):#GENERAL, create a post, get ALL the posts
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class PostDetailView(APIView):#INDIVIDUAL, user needs to be authenticated first
+class PostDetailView(APIView):  # INDIVIDUAL, user needs to be authenticated first
     permission_classes = [IsAuthenticated, IsPostAuthor]
 
     def get(self, request, pk):
@@ -174,20 +174,29 @@ class PostDetailView(APIView):#INDIVIDUAL, user needs to be authenticated first
     def patch(self, request, pk):
         post = Post.objects.get(pk=pk)  # Get post by ID (pk)
         self.check_object_permissions(request, post)  # Ensure user is allowed to edit this post
-        
+
+        # Remove author from request data as it should not be updated
+        request_data = request.data.copy()
+        request_data.pop("author", None)  # Remove 'author' if it exists
+
         # Update only the fields that are passed in the request
-        serializer = PostSerializer(post, data=request.data, partial=True)  # partial=True means not all fields need to be sent
+        serializer = PostSerializer(post, data=request_data, partial=True)  # partial=True means not all fields need to be sent
         if serializer.is_valid():
             serializer.save()  # Save the updated post
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        post = Post.objects.get(pk=pk)  # Get post by ID (pk)
+        try:
+            post = Post.objects.get(pk=pk)  # Get post by ID (pk)
+        except Post.DoesNotExist:
+            return Response({"error": "Post does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
         self.check_object_permissions(request, post)  # Ensure user is allowed to delete this post
-        
+
         post.delete()  # Delete the post
-        return Response(status=status.HTTP_204_NO_CONTENT)  # Return 204 No Content on successful deletion
+        return Response({"message": "Post deleted."}, status=status.HTTP_204_NO_CONTENT)  # Return 204 No Content on successful deletion
+
 
 class CommentListCreateView(APIView):
     permission_classes = [IsAuthenticated]  # Ensures only logged-in users can access
