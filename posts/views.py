@@ -33,6 +33,34 @@ class ProtectedView(APIView):
 
 
 class UserListCreateView(APIView):
+    def post(self, request):
+        """Handles user creation and password hashing."""
+
+        # Get the 'include_hashed_password' flag from request parameters
+        include_hashed_password = request.query_params.get('include_hashed_password', 'false') == 'true'
+
+        # Initialize the serializer with the incoming data and pass the flag in the context
+        serializer = UserSerializer(data=request.data, context={'include_hashed_password': include_hashed_password})
+
+        # Check if the serializer is valid
+        if serializer.is_valid():
+            # Save the new user (password will be hashed automatically by serializer's `create` method)
+            user = serializer.save()
+
+            # Include the hashed password in the response if requested
+            response_data = {
+                "message": "User created successfully",
+                "user_id": user.id
+            }
+
+            if include_hashed_password:
+                response_data['hashed_password'] = serializer.context.get('hashed_password')
+
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        
+        # If the data is not valid, return the errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     permission_classes = [IsAuthenticated, IsAdmin]  # Only admins can view all users, but any authenticated user can register
 
     def get(self, request):
@@ -41,19 +69,7 @@ class UserListCreateView(APIView):
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        """Handles password hashing when creating a user."""
-        password = request.data.get("password", None)
-        if not password:
-            return Response({"error": "Password is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        hashed_password = make_password(password)
-
-        # Optional: Add bcrypt salting
-        salt = bcrypt.gensalt()
-        hashed_with_salt_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-
-        return Response({"message": "User created successfully", "hashed_password": hashed_password})
+    
 
 class UserDetailView(APIView):
     permission_classes = [IsAuthenticated, IsOwner]  # Only the user can modify their own account

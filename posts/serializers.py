@@ -19,15 +19,22 @@ class UserSerializer(serializers.ModelSerializer):
             code="invalid_password")]
     )
     
+    hashed_password = serializers.CharField(write_only=True, required=False)  # Optional field to return the hashed password
+    
     class Meta:
         model = User
-        fields = ['id','username', 'email', 'password', 'created_at']  # Include password for creation only
-
+        fields = ['id', 'username', 'email', 'password', 'created_at', 'hashed_password']  # Include hashed_password optionally
+    
     def create(self, validated_data):
         password = validated_data.pop('password')  # Remove the password from validated data
         user = User.objects.create(**validated_data)
         user.set_password(password)  # Use Django's built-in password hashing
         user.save()
+
+        # If you want to optionally include the hashed password, return it
+        if self.context.get('include_hashed_password', False):
+            self.context['hashed_password'] = user.password  # or user.password_hash, depending on your model
+
         return user
 
 
