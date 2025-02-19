@@ -1,4 +1,5 @@
-#TOKEN LIST#
+#TOKEN LIST# 
+# NOTE: If this is a clone project files, the token list below won't work. You need to create your own users and groups. #
 
 #superuser-c7af0a7e7ca83a44dc54d9b65ff1ebbd7fcf4c37
 
