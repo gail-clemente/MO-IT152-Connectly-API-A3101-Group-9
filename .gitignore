@@ -18,7 +18,10 @@ ENV/
 env.bak/ 
 venv.bak/ 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 538362e9b8e811981bef937be90d6a3193bca89e
 
 # Visual Studio Code # 
 .vscode
