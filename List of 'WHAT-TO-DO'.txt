@@ -1,6 +1,6 @@
 WHAT TO DO:
 
-HW 5: Adding User Interactions (Likes and Comments)
+for HW 5: Adding User Interactions (Likes and Comments)
 -- Implement Changes:
         Add models:
             Likes: Reference User and Post. (DONE)
