@@ -1,0 +1,22 @@
+WHAT TO DO:
+
+HW 5: Adding User Interactions (Likes and Comments)
+-- Implement Changes:
+        Add models:
+            Likes: Reference User and Post. (DONE)
+            Comments: Reference User, Post, and include content and timestamp. (DONE)
+        Create endpoints:
+            POST /posts/{id}/like: Allows users to like a post.
+            POST /posts/{id}/comment: Allows users to comment on a post. (DONE)
+            GET /posts/{id}/comments: Retrieves all comments for a post. (DONE)
+
+-- Advanced Tasks (Optional)
+        Like/Comment Counts:
+            Modify the endpoint GET /posts/{id} to include:
+                like_count: The number of likes for the post.
+                comment_count: The number of comments for the post.
+                
+        Pagination for Comments:
+            Implement pagination for the GET /posts/{id}/comments endpoint to handle large datasets efficiently.
+
+

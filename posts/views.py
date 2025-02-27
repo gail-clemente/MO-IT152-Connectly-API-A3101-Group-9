@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from connectly_project.singletons.logger_singleton import LoggerSingleton
-from .models import Post, Comment
+from .models import Post, Comment, PostLikes
 from .serializers import UserSerializer, PostSerializer, CommentSerializer
 from posts import serializers
 from django.contrib.auth import authenticate
@@ -177,6 +177,9 @@ class PostListCreate(APIView):#GENERAL, create a post, get ALL the posts
         except ValueError as e:
             # If the post type is invalid or missing metadata, handle the exception
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
 
 
 class PostDetailView(APIView):  # INDIVIDUAL, user needs to be authenticated first
@@ -267,6 +270,38 @@ class CommentDetailView(APIView):#SPECIFIC COMMENT
 
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class PostLikeListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, post_id):
+        """Allows authenticated users to like/unlike a post"""
+        post = get_object_or_404(Post, id=post_id)  # Ensure the post exists
+        
+        like, created = PostLikes.objects.get_or_create(author=request.user, post=post)
+
+        if not created:  # If the like already exists, unlike it
+            like.delete()
+            return Response({"message": "Unliked the post"}, status=status.HTTP_204_NO_CONTENT)
+
+        return Response({"message": "Liked the post"}, status=status.HTTP_201_CREATED)
+
+
+
+    
+    
+
+     
+    
+
+
+
+
+
+
+
 
 class AdminOnlyView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]  # Use the permission class to check access

@@ -48,24 +48,24 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['title', 'content', 'author', 'post_type', 'metadata', 'created_at', 'comments']  # Include the new fields
+        fields = ['title', 'content', 'author', 'post_type', 'metadata', 'created_at', 'liked_by', 'comments']  # Include the new fields
 
 
     def validate_author(self, value):
         if not User.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Author not found.")
         return value
+    
+    liked_by = serializers.SerializerMethodField()
+
+    def get_liked_by(self, obj):
+        return obj.postlikes.values_list('author__id', flat=True)  # Return list of user IDs who liked the post
+
        
 
 class CommentSerializer(serializers.ModelSerializer):
-    post = serializers.PrimaryKeyRelatedField(
-        queryset=Post.objects.all(),
-        error_messages={'does_not_exist': 'Post not found.'}
-    )
-    author = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        error_messages={'does_not_exist': 'Author not found.'}
-    )
+    author = serializers.ReadOnlyField(source='author.id')  # Make author read-only
+    post = serializers.ReadOnlyField(source='post.id')  # Make post read-only
 
     class Meta:
         model = Comment
@@ -76,11 +76,11 @@ class CommentSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Comment text cannot be empty.")
         return value
+
+
+
+        
     
-    def perform_create(self, serializer):
-        if self.request.user.is_authenticated:
-            serializer.save(author=self.request.user)
-        else:
-            raise PermissionDenied("Authentication is required.")
+
 
 

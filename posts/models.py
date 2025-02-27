@@ -30,7 +30,9 @@ class Post(models.Model):
     post_type = models.CharField(max_length=10, choices=POST_TYPES, default='General')  # Type of the post (e.g., text, image, video)
     metadata = models.JSONField(default=dict, blank=True)  # Store additional metadata (e.g., file_size, duration)
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for when the post is created
+    
 
+    
     def __str__(self):
         return f"Post by {self.author.username} at {self.created_at}"
 
@@ -49,3 +51,15 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment by {self.author.username} on Post {self.post.id}"
 
+
+class PostLikes(models.Model):
+    author = models.ForeignKey(
+        User, related_name='postlikes', on_delete=models.CASCADE
+    )  # Links likes to the author
+    post = models.ForeignKey(
+        Post, related_name='postlikes', on_delete=models.CASCADE
+    )  # Links likes to a specific post
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for like creation
+
+    def __str__(self):
+        return f"Liked by {self.author.username} on Post {self.post.id}"    
