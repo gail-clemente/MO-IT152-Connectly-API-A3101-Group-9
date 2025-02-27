@@ -56,6 +56,7 @@ class PostSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Author not found.")
         return value
     
+    # Retrieed users who liked the post (userID)
     liked_by = serializers.SerializerMethodField()
 
     def get_liked_by(self, obj):
